@@ -1,0 +1,306 @@
+#!/usr/bin/env python3
+"""
+VibeGuard CLI - AI Code Compliance Tool
+"""
+
+import sys
+import os
+import json
+import argparse
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from detection.detector import analyze, analyze_file
+from policy.engine import evaluate_commit, EXAMPLE_CONFIG
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='vibeguard',
+        description='AI Code Compliance CLI'
+    )
+    parser.add_argument('--version', '-v', action='store_true', help='Show version')
+    
+    subparsers = parser.add_subparsers(dest='command', help='Commands')
+    
+    # Scan command
+    scan_parser = subparsers.add_parser('scan', help='Scan files for AI-generated code')
+    scan_parser.add_argument('--path', '-p', default='.', help='Path to scan')
+    scan_parser.add_argument('--config', '-c', help='Path to vibeguard.yaml')
+    scan_parser.add_argument('--format', '-f', choices=['text', 'json', 'github'], default='text')
+    scan_parser.add_argument('--fail-on-block', action='store_true', help='Exit 1 if blocked')
+    
+    # Analyze command
+    analyze_parser = subparsers.add_parser('analyze', help='Analyze a single file')
+    analyze_parser.add_argument('file', help='File to analyze')
+    analyze_parser.add_argument('--format', '-f', choices=['text', 'json'], default='text')
+    
+    # Init command
+    init_parser = subparsers.add_parser('init', help='Initialize vibeguard.yaml')
+    init_parser.add_argument('--path', '-p', default='vibeguard.yaml', help='Config path')
+    
+    args = parser.parse_args()
+    
+    if args.version:
+        print('vibeguard version 0.2.0')
+        return
+    
+    if args.command == 'scan':
+        cmd_scan(args)
+    elif args.command == 'analyze':
+        cmd_analyze(args)
+    elif args.command == 'init':
+        cmd_init(args)
+    else:
+        parser.print_help()
+
+
+def cmd_scan(args):
+    """Scan directory for AI code."""
+    path = Path(args.path)
+    
+    # Find files
+    extensions = {'.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.java', '.kt', '.rs', '.rb', '.php'}
+    skip_dirs = {'node_modules', '.git', 'vendor', 'dist', 'build', '__pycache__', '.next', 'target'}
+    
+    files = []
+    if path.is_file():
+        files = [path]
+    else:
+        for root, dirs, filenames in os.walk(path):
+            dirs[:] = [d for d in dirs if d not in skip_dirs]
+            for f in filenames:
+                if Path(f).suffix in extensions:
+                    files.append(Path(root) / f)
+    
+    if not files:
+        print('No files found to scan')
+        return
+    
+    print(f'Scanning {len(files)} files...\n')
+    
+    # Analyze files
+    results = []
+    max_ai = 0
+    total_ai_lines = 0
+    total_lines = 0
+    
+    for filepath in files:
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            
+            result = analyze(content)
+            lines = len(content.split('\n'))
+            
+            ai_conf = result['ai_probability']
+            if ai_conf > max_ai:
+                max_ai = ai_conf
+            
+            if ai_conf > 0.7:
+                total_ai_lines += lines
+            total_lines += lines
+            
+            results.append({
+                'path': str(filepath),
+                'ai_confidence': ai_conf,
+                'lines_changed': lines,
+                'status': 'ai-generated' if ai_conf > 0.7 else 'human-written'
+            })
+        except Exception as e:
+            continue
+    
+    ai_pct = (total_ai_lines / total_lines * 100) if total_lines > 0 else 0
+    
+    # Load config
+    config = EXAMPLE_CONFIG
+    config_path = args.config or 'vibeguard.yaml'
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            config = f.read()
+    
+    # Evaluate policies
+    policy_analysis = {
+        'files': results,
+        'max_ai_confidence': max_ai,
+        'ai_percentage': ai_pct,
+        'total_lines_changed': total_lines,
+        'security_issues': []
+    }
+    
+    policy_result = evaluate_commit(config, policy_analysis)
+    
+    output = {
+        'status': 'completed',
+        'files_scanned': len(results),
+        'ai_detected': len([r for r in results if r['status'] == 'ai-generated']),
+        'human_written': len([r for r in results if r['status'] == 'human-written']),
+        'max_ai_confidence': max_ai,
+        'ai_percentage': ai_pct,
+        'results': results,
+        'blocked': not policy_result['allowed'],
+        'violations': policy_result['violations'],
+        'warnings': policy_result['warnings']
+    }
+    
+    # Output
+    if args.format == 'json':
+        print(json.dumps(output, indent=2))
+    elif args.format == 'github':
+        output_github(output)
+    else:
+        output_text(output)
+    
+    if args.fail_on_block and output['blocked']:
+        sys.exit(1)
+
+
+def cmd_analyze(args):
+    """Analyze a single file."""
+    filepath = args.file
+    
+    if not os.path.exists(filepath):
+        print(f'File not found: {filepath}')
+        sys.exit(1)
+    
+    result = analyze_file(filepath)
+    
+    if args.format == 'json':
+        print(json.dumps(result, indent=2))
+    else:
+        conf = result['ai_probability'] * 100
+        status = 'AI-generated' if conf > 70 else 'human-written'
+        icon = '🤖' if conf > 70 else '✓'
+        
+        print(f'{icon} {filepath}')
+        print(f'   AI Probability: {conf:.0f}%')
+        print(f'   Confidence: {result["confidence"]}')
+        print(f'   Status: {status}')
+        print(f'\n   Stylometry Score: {result["stylometry_score"]:.0%}')
+        print(f'   Pattern Score: {result["pattern_score"]:.0%}')
+
+
+def cmd_init(args):
+    """Initialize config file."""
+    config_path = args.path
+    
+    if os.path.exists(config_path):
+        print(f'{config_path} already exists')
+        sys.exit(1)
+    
+    config = '''# vibeguard.yaml
+version: "1.0"
+org: my-org
+
+policies:
+  # Block AI code in authentication
+  - name: no-ai-in-auth
+    description: "AI-generated code not allowed in authentication"
+    trigger:
+      ai_confidence: "> 70%"
+    paths:
+      - "src/auth/**"
+      - "**/auth*"
+      - "**/security/**"
+    action: block
+    message: "AI-generated code requires security review in auth modules"
+
+  # Require review for high-AI PRs
+  - name: high-ai-review
+    description: "PRs with >50% AI code need senior review"
+    trigger:
+      ai_percentage: "> 50%"
+      lines_changed: "> 100"
+    action: require_reviewers
+    reviewers:
+      teams: ["senior-engineers"]
+
+  # Warn on quick reviews of AI code
+  - name: review-quality
+    description: "Flag PRs approved too quickly"
+    trigger:
+      review_time: "< 2 minutes"
+      ai_percentage: "> 30%"
+    action: warn
+    message: "This PR was approved quickly. Please verify AI-generated sections."
+'''
+    
+    with open(config_path, 'w') as f:
+        f.write(config)
+    
+    print(f'Created {config_path}')
+    print('\nEdit this file to customize your AI code policies.')
+
+
+def output_text(result):
+    """Output results as text."""
+    print('━' * 50)
+    print('  VibeGuard Analysis')
+    print('━' * 50)
+    print()
+    print(f'  Files scanned:     {result["files_scanned"]}')
+    print(f'  AI-generated:      {result["ai_detected"]}')
+    print(f'  Human-written:     {result["human_written"]}')
+    print(f'  AI percentage:     {result["ai_percentage"]:.1f}%')
+    print(f'  Max AI confidence: {result["max_ai_confidence"]:.0%}')
+    print()
+    
+    if result['violations']:
+        print('  ❌ POLICY VIOLATIONS')
+        for v in result['violations']:
+            print(f'     • {v["policy"]}: {v["message"]}')
+            if v.get('files'):
+                print(f'       Files: {", ".join(v["files"][:3])}')
+        print()
+    
+    if result['warnings']:
+        print('  ⚠️  WARNINGS')
+        for w in result['warnings']:
+            print(f'     • {w["policy"]}: {w["message"]}')
+        print()
+    
+    if result['results']:
+        print('  FILES')
+        for f in sorted(result['results'], key=lambda x: -x['ai_confidence'])[:10]:
+            icon = '🤖' if f['ai_confidence'] > 0.7 else '✓'
+            path = f['path']
+            if len(path) > 40:
+                path = '...' + path[-37:]
+            print(f'     {icon} {path:40} {f["ai_confidence"]:>5.0%}')
+        
+        if len(result['results']) > 10:
+            print(f'     ... and {len(result["results"]) - 10} more files')
+        print()
+    
+    print('━' * 50)
+    if result['blocked']:
+        print('  ❌ BLOCKED - Policy violations detected')
+    elif result['warnings']:
+        print('  ⚠️  PASSED with warnings')
+    else:
+        print('  ✅ PASSED')
+    print('━' * 50)
+
+
+def output_github(result):
+    """Output results in GitHub Actions format."""
+    if result['blocked']:
+        print('::error::VibeGuard: Policy violations detected')
+    
+    for v in result['violations']:
+        files = ','.join(v.get('files', []))
+        print(f"::error file={files}::Policy '{v['policy']}': {v['message']}")
+    
+    for w in result['warnings']:
+        print(f"::warning::Policy '{w['policy']}': {w['message']}")
+    
+    print(f"::set-output name=blocked::{str(result['blocked']).lower()}")
+    print(f"::set-output name=ai_percentage::{result['ai_percentage']:.1f}")
+    print(f"::set-output name=files_scanned::{result['files_scanned']}")
+
+
+if __name__ == '__main__':
+    main()

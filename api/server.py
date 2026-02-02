@@ -12,6 +12,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from detection.detector import analyze as analyze_combined, CombinedDetector
 from detection.stylometry import analyze_code, StylometryAnalyzer
 from policy.engine import PolicyEngine, evaluate_commit, EXAMPLE_CONFIG
 
@@ -19,6 +20,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Initialize components
+detector = CombinedDetector()
 stylometry = StylometryAnalyzer()
 policy_engine = PolicyEngine(EXAMPLE_CONFIG)
 
