@@ -3,750 +3,623 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VibeGuard — AI Code Compliance Platform</title>
-  <meta name="description" content="Compliance for AI-generated code. Detect, enforce, and audit AI code in your codebase.">
+  <title>VibeGuard — Know What AI Wrote</title>
+  <meta name="description" content="AI code detection and compliance for engineering teams. See what's AI-generated before it ships.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
     :root {
-      --bg-primary: #0a0a0b;
-      --bg-secondary: #141416;
-      --bg-tertiary: #1a1a1f;
-      --bg-hover: #222228;
-      --border: #2a2a32;
-      --text-primary: #fafafa;
-      --text-secondary: #a1a1aa;
-      --text-muted: #71717a;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --success: #22c55e;
-      --warning: #eab308;
-      --danger: #f97316;
-      --critical: #ef4444;
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --border: #262626;
+      --text: #fafafa;
+      --text-muted: #737373;
+      --accent: #22c55e;
+      --accent-dim: #166534;
+      --red: #ef4444;
+      --yellow: #eab308;
     }
-    
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    
-    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-    
-    /* Header */
-    header {
-      padding: 20px 0;
+
+    .mono {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      background: rgba(10, 10, 10, 0.8);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
     }
-    
-    .header-content {
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    
+
     .logo {
+      font-weight: 700;
+      font-size: 1.25rem;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 20px;
+      gap: 0.5rem;
     }
-    
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      border-radius: 8px;
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: #000;
     }
-    
-    .nav {
+
+    .nav-links {
       display: flex;
-      gap: 32px;
+      gap: 2rem;
       align-items: center;
     }
-    
-    .nav a {
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 14px;
+
+    .nav-links a {
+      color: var(--text-muted);
+      font-size: 0.9rem;
       transition: color 0.2s;
     }
-    
-    .nav a:hover { color: var(--text-primary); }
-    
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
     .btn {
-      padding: 10px 20px;
-      border-radius: 8px;
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
       font-weight: 500;
-      font-size: 14px;
+      font-size: 0.9rem;
       cursor: pointer;
       transition: all 0.2s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn-primary {
-      background: var(--accent);
-      color: white;
       border: none;
     }
-    
-    .btn-primary:hover { background: var(--accent-hover); }
-    
-    .btn-secondary {
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      background: #e5e5e5;
+    }
+
+    .btn-ghost {
       background: transparent;
-      color: var(--text-primary);
+      color: var(--text);
       border: 1px solid var(--border);
     }
-    
-    .btn-secondary:hover { 
-      background: var(--bg-hover);
+
+    .btn-ghost:hover {
       border-color: var(--text-muted);
     }
-    
+
     /* Hero */
     .hero {
-      padding: 100px 0 80px;
-      text-align: center;
-    }
-    
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 24px;
-    }
-    
-    .badge-dot {
-      width: 6px;
-      height: 6px;
-      background: var(--success);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    
-    h1 {
-      font-size: 56px;
-      font-weight: 700;
-      line-height: 1.1;
-      margin-bottom: 24px;
-      letter-spacing: -0.02em;
-    }
-    
-    h1 span { 
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    .hero-subtitle {
-      font-size: 20px;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 40px;
-    }
-    
-    .hero-cta {
+      min-height: 100vh;
       display: flex;
-      gap: 16px;
+      flex-direction: column;
       justify-content: center;
-      margin-bottom: 60px;
+      padding: 8rem 2rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    
-    /* Stats */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 24px;
-      padding: 40px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .stat {
-      text-align: center;
-    }
-    
-    .stat-value {
-      font-size: 36px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-    
-    .stat-label {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-    
-    /* Problem Section */
-    .section {
-      padding: 100px 0;
-    }
-    
-    .section-label {
-      font-size: 13px;
-      font-weight: 600;
+
+    .hero-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
       color: var(--accent);
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      margin-bottom: 16px;
+      margin-bottom: 1.5rem;
     }
-    
-    h2 {
-      font-size: 40px;
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
       font-weight: 700;
-      margin-bottom: 24px;
-      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      max-width: 800px;
     }
-    
-    .section-desc {
-      font-size: 18px;
-      color: var(--text-secondary);
+
+    .hero h1 .dim {
+      color: var(--text-muted);
+    }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 540px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 3rem;
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat {
+      text-align: left;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Problem */
+    .section {
+      padding: 6rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+    }
+
+    .section h2 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
       max-width: 600px;
-      margin-bottom: 48px;
     }
-    
-    /* Problem Cards */
+
+    .section-intro {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+
+    /* Problem grid */
     .problem-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
     }
-    
+
     .problem-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 32px;
+      background: var(--bg);
+      padding: 2rem;
     }
-    
-    .problem-icon {
-      width: 48px;
-      height: 48px;
-      background: var(--bg-tertiary);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-    
+
     .problem-card h3 {
-      font-size: 18px;
+      font-size: 1rem;
       font-weight: 600;
-      margin-bottom: 12px;
-    }
-    
-    .problem-card p {
-      color: var(--text-secondary);
-      font-size: 15px;
-    }
-    
-    /* Solution Section */
-    .solution-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
-    
-    .solution-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 32px;
-      transition: all 0.2s;
-    }
-    
-    .solution-card:hover {
-      border-color: var(--accent);
-      transform: translateY(-4px);
-    }
-    
-    .solution-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      color: var(--accent);
-      margin-bottom: 16px;
-    }
-    
-    .solution-card h3 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-    
-    .solution-card p {
-      color: var(--text-secondary);
-      font-size: 15px;
-      margin-bottom: 20px;
-    }
-    
-    .solution-features {
-      list-style: none;
-    }
-    
-    .solution-features li {
-      font-size: 14px;
-      color: var(--text-muted);
-      padding: 8px 0;
-      border-top: 1px solid var(--border);
+      margin-bottom: 0.75rem;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 0.5rem;
     }
-    
-    .solution-features li::before {
-      content: "✓";
-      color: var(--success);
+
+    .problem-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
     }
-    
-    /* Code Preview */
-    .code-preview {
-      background: var(--bg-secondary);
+
+    /* Terminal */
+    .terminal-section {
+      padding: 4rem 2rem;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
-      margin-top: 48px;
     }
-    
-    .code-header {
-      padding: 16px 24px;
+
+    .terminal-header {
+      padding: 0.75rem 1rem;
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0.5rem;
     }
-    
-    .code-dots {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .code-dot {
-      width: 12px;
-      height: 12px;
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
+      background: var(--border);
     }
-    
-    .code-dot.red { background: #ef4444; }
-    .code-dot.yellow { background: #eab308; }
-    .code-dot.green { background: #22c55e; }
-    
-    .code-title {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+
+    .terminal-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
       color: var(--text-muted);
+      margin-left: 0.5rem;
     }
-    
-    .code-body {
-      padding: 24px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
+
+    .terminal-body {
+      padding: 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.875rem;
       line-height: 1.8;
-      overflow-x: auto;
     }
-    
-    .code-line {
+
+    .terminal-line {
       display: flex;
+      gap: 0.75rem;
     }
-    
-    .line-number {
-      color: var(--text-muted);
-      min-width: 40px;
+
+    .terminal-prompt {
+      color: var(--accent);
       user-select: none;
     }
-    
-    .code-content { flex: 1; }
-    
-    .highlight-ai {
-      background: rgba(239, 68, 68, 0.1);
-      border-left: 2px solid var(--critical);
-      padding: 2px 8px;
-      margin: 2px 0;
-    }
-    
-    .highlight-verified {
-      background: rgba(34, 197, 94, 0.1);
-      border-left: 2px solid var(--success);
-      padding: 2px 8px;
-      margin: 2px 0;
-    }
-    
-    .comment { color: var(--text-muted); }
-    .keyword { color: #c084fc; }
-    .string { color: #4ade80; }
-    .function { color: #60a5fa; }
-    
-    /* Compliance Section */
-    .compliance-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-    
-    .compliance-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-    }
-    
-    .compliance-card h4 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    
-    .compliance-card p {
-      font-size: 13px;
+
+    .terminal-output {
       color: var(--text-muted);
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+      border-left: 2px solid var(--border);
     }
-    
-    /* CTA */
-    .cta {
-      background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 80px;
-      text-align: center;
-      margin: 100px 0;
-    }
-    
-    .cta h2 {
-      font-size: 36px;
-      margin-bottom: 16px;
-    }
-    
-    .cta p {
-      color: var(--text-secondary);
-      font-size: 18px;
-      margin-bottom: 32px;
-    }
-    
-    /* Footer */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 0;
-    }
-    
-    .footer-content {
+
+    .terminal-output .file {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      padding: 0.25rem 0;
     }
-    
-    .footer-links {
-      display: flex;
-      gap: 24px;
+
+    .terminal-output .ai {
+      color: var(--red);
     }
-    
-    .footer-links a {
+
+    .terminal-output .human {
+      color: var(--accent);
+    }
+
+    .terminal-output .warn {
+      color: var(--yellow);
+    }
+
+    /* How it works */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .step {
+      padding: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .step-num {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .step h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .step p {
       color: var(--text-muted);
-      text-decoration: none;
-      font-size: 14px;
+      font-size: 0.9rem;
     }
-    
-    .footer-links a:hover { color: var(--text-secondary); }
-    
+
+    /* Compliance */
+    .compliance-grid {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .compliance-tag {
+      padding: 0.75rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    /* CTA */
+    .cta-section {
+      padding: 8rem 2rem;
+      text-align: center;
+      background: linear-gradient(to bottom, var(--bg), var(--surface));
+    }
+
+    .cta-section h2 {
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .cta-section p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+
+    .cta-section .btn {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+    }
+
+    /* Footer */
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--text);
+      margin: 0 1rem;
+    }
+
     /* Responsive */
-    @media (max-width: 968px) {
-      h1 { font-size: 40px; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .problem-grid { grid-template-columns: 1fr; }
-      .solution-grid { grid-template-columns: 1fr; }
-      .compliance-grid { grid-template-columns: repeat(2, 1fr); }
-      .nav { display: none; }
-    }
-    
-    @media (max-width: 640px) {
-      h1 { font-size: 32px; }
-      .hero { padding: 60px 0 40px; }
-      .hero-cta { flex-direction: column; }
-      .stats { grid-template-columns: 1fr; }
-      .cta { padding: 40px 24px; }
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero-stats {
+        flex-wrap: wrap;
+        gap: 2rem;
+      }
+
+      .problem-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <div class="header-content">
-        <div class="logo">
-          <div class="logo-icon">🛡️</div>
-          <span>VibeGuard</span>
-        </div>
-        <nav class="nav">
-          <a href="#features">Features</a>
-          <a href="#compliance">Compliance</a>
-          <a href="#pricing">Pricing</a>
-          <a href="/docs">Docs</a>
-          <a href="#" class="btn btn-secondary">Sign In</a>
-          <a href="#" class="btn btn-primary">Get Started</a>
-        </nav>
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">V</span>
+        <span>vibeguard</span>
+      </a>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="https://github.com/rohansx/vibeguard.io">GitHub</a>
+        <a href="#" class="btn btn-ghost">Sign in</a>
+        <a href="#" class="btn btn-primary">Get early access</a>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main>
-    <section class="hero">
-      <div class="container">
-        <div class="badge">
-          <span class="badge-dot"></span>
-          Now in Private Beta
+  <section class="hero">
+    <div class="hero-label">For engineering teams shipping AI code</div>
+    <h1>Know what AI wrote <span class="dim">before it ships</span></h1>
+    <p class="hero-sub">
+      Your team uses Copilot. Your compliance team wants audit trails. 
+      VibeGuard detects AI-generated code and enforces review policies.
+    </p>
+    <div class="hero-cta">
+      <a href="#" class="btn btn-primary">Request early access</a>
+      <a href="#how" class="btn btn-ghost">See how it works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-value">42%</div>
+        <div class="stat-label">of code is AI-generated</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">0%</div>
+        <div class="stat-label">have audit trails for it</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">2026</div>
+        <div class="stat-label">EU AI Act enforcement</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">The problem</div>
+    <h2>Vibe coding is fast. It's also risky.</h2>
+    <p class="section-intro">
+      Developers accept AI suggestions without fully understanding them. 
+      Security reviews can't keep up. Auditors are starting to ask questions.
+    </p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h3>No visibility</h3>
+        <p>Which PRs are AI-generated? Which files? Nobody knows until something breaks.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Rubber-stamp reviews</h3>
+        <p>200-line PR approved in 90 seconds. The reviewer didn't read it. The AI wrote it.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Compliance gaps</h3>
+        <p>SOC 2 auditors ask about AI governance. You have nothing to show them.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Hidden vulnerabilities</h3>
+        <p>AI hallucinates APIs, leaks secrets, and writes injection-prone code. At scale.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="terminal-section" id="how">
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="terminal-dot"></span>
+        <span class="terminal-dot"></span>
+        <span class="terminal-dot"></span>
+        <span class="terminal-title">vibeguard scan --pr 1847</span>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-line">
+          <span class="terminal-prompt">$</span>
+          <span>vibeguard scan --pr 1847</span>
         </div>
-        <h1>Compliance for<br><span>AI-Generated Code</span></h1>
-        <p class="hero-subtitle">
-          Detect AI code, enforce review policies, and generate audit-ready documentation. 
-          Ship with confidence.
-        </p>
-        <div class="hero-cta">
-          <a href="#" class="btn btn-primary">
-            Request Early Access
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </a>
-          <a href="#" class="btn btn-secondary">View Demo</a>
+        <div class="terminal-output">
+          <div>Scanning 12 files...</div>
+          <br>
+          <div class="file">
+            <span>src/auth/oauth.ts</span>
+            <span class="ai">92% AI</span>
+          </div>
+          <div class="file">
+            <span>src/api/handlers.ts</span>
+            <span class="ai">78% AI</span>
+          </div>
+          <div class="file">
+            <span>src/utils/crypto.ts</span>
+            <span class="human">12% AI</span>
+          </div>
+          <div class="file">
+            <span>tests/auth.test.ts</span>
+            <span class="ai">85% AI</span>
+          </div>
+          <br>
+          <div class="warn">⚠ Policy violation: AI code in auth/ requires security review</div>
+          <div>→ Blocking merge until approved by @security-team</div>
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-prompt">$</span>
+          <span class="blink">_</span>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="container">
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value">42%</div>
-          <div class="stat-label">of code is AI-generated</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">96%</div>
-          <div class="stat-label">of devs don't fully trust it</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">48%</div>
-          <div class="stat-label">actually verify before commit</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">0%</div>
-          <div class="stat-label">audit trail for AI code</div>
-        </div>
+  <section class="section">
+    <div class="section-label">How it works</div>
+    <h2>Three layers of protection</h2>
+    <p class="section-intro">
+      Detect AI code, enforce policies, generate audit trails. 
+      All without slowing down your developers.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Detect</h3>
+        <p>ML-powered detection identifies AI-generated code in every PR. Per-file confidence scores. IDE telemetry for 99% accuracy.</p>
       </div>
-    </section>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Enforce</h3>
+        <p>Define policies in YAML. Block AI code in sensitive paths. Require senior review for high-AI PRs. Route to security automatically.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Audit</h3>
+        <p>Every commit logged with AI attribution. Export SOC 2 evidence packs. Show auditors exactly what AI wrote and who reviewed it.</p>
+      </div>
+    </div>
+  </section>
 
-    <section class="section" id="problem">
-      <div class="container">
-        <div class="section-label">The Problem</div>
-        <h2>Vibe coding is a compliance nightmare</h2>
-        <p class="section-desc">
-          Your engineers are shipping AI-generated code with no visibility, 
-          no verification, and no audit trail. Regulators are starting to notice.
-        </p>
-        
-        <div class="problem-grid">
-          <div class="problem-card">
-            <div class="problem-icon">🎯</div>
-            <h3>Zero Visibility</h3>
-            <p>You have no idea how much AI-generated code is in your codebase, who wrote it, or whether it was reviewed.</p>
-          </div>
-          <div class="problem-card">
-            <div class="problem-icon">⚠️</div>
-            <h3>Security Blind Spots</h3>
-            <p>AI hallucinations introduce vulnerabilities. 53% of devs report issues with code that "looks correct but isn't."</p>
-          </div>
-          <div class="problem-card">
-            <div class="problem-icon">📋</div>
-            <h3>Compliance Gaps</h3>
-            <p>EU AI Act, SOC 2, and SEC rules increasingly require AI audit trails. Most companies have none.</p>
-          </div>
-          <div class="problem-card">
-            <div class="problem-icon">💸</div>
-            <h3>Verification Debt</h3>
-            <p>Werner Vogels: "When the machine writes it, you'll have to rebuild comprehension during review." That debt compounds.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+  <section class="section">
+    <div class="section-label">Compliance ready</div>
+    <h2>Built for regulated teams</h2>
+    <p class="section-intro">
+      Generate audit-ready documentation for the frameworks that matter.
+    </p>
+    <div class="compliance-grid">
+      <div class="compliance-tag">EU AI Act</div>
+      <div class="compliance-tag">SOC 2 Type II</div>
+      <div class="compliance-tag">ISO 27001</div>
+      <div class="compliance-tag">SEC Cybersecurity</div>
+      <div class="compliance-tag">HIPAA</div>
+      <div class="compliance-tag">FedRAMP</div>
+    </div>
+  </section>
 
-    <section class="section" id="features">
-      <div class="container">
-        <div class="section-label">The Solution</div>
-        <h2>Three layers of protection</h2>
-        <p class="section-desc">
-          VibeGuard integrates into your existing workflow to detect, enforce, and document 
-          AI-generated code automatically.
-        </p>
-        
-        <div class="solution-grid">
-          <div class="solution-card">
-            <div class="solution-number">01</div>
-            <h3>Detect</h3>
-            <p>Automatically identify AI-generated code in commits, PRs, and your entire codebase.</p>
-            <ul class="solution-features">
-              <li>ML-powered detection</li>
-              <li>Per-file confidence scores</li>
-              <li>Historical analysis</li>
-              <li>IDE integration</li>
-            </ul>
-          </div>
-          <div class="solution-card">
-            <div class="solution-number">02</div>
-            <h3>Enforce</h3>
-            <p>Set policies for AI code: require reviews, block high-risk commits, gate deployments.</p>
-            <ul class="solution-features">
-              <li>Custom policy rules</li>
-              <li>CI/CD gates</li>
-              <li>Required reviewers</li>
-              <li>Risk-based routing</li>
-            </ul>
-          </div>
-          <div class="solution-card">
-            <div class="solution-number">03</div>
-            <h3>Audit</h3>
-            <p>Generate compliance-ready reports showing AI code governance across your org.</p>
-            <ul class="solution-features">
-              <li>Audit trail exports</li>
-              <li>SOC 2 evidence packs</li>
-              <li>Trend dashboards</li>
-              <li>API for integrations</li>
-            </ul>
-          </div>
-        </div>
-        
-        <div class="code-preview">
-          <div class="code-header">
-            <div class="code-dots">
-              <div class="code-dot red"></div>
-              <div class="code-dot yellow"></div>
-              <div class="code-dot green"></div>
-            </div>
-            <span class="code-title">vibeguard scan --pr 1234</span>
-          </div>
-          <div class="code-body">
-            <div class="code-line">
-              <span class="line-number">$</span>
-              <span class="code-content">vibeguard scan --pr 1234</span>
-            </div>
-            <div class="code-line">
-              <span class="line-number"></span>
-              <span class="code-content"></span>
-            </div>
-            <div class="code-line">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="keyword">Scanning</span> 12 files in PR #1234...</span>
-            </div>
-            <div class="code-line">
-              <span class="line-number"></span>
-              <span class="code-content"></span>
-            </div>
-            <div class="code-line highlight-ai">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="danger">⚠ AI-GENERATED</span> src/auth/login.ts (94% confidence)</span>
-            </div>
-            <div class="code-line highlight-ai">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="danger">⚠ AI-GENERATED</span> src/utils/parse.ts (87% confidence)</span>
-            </div>
-            <div class="code-line highlight-verified">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="success">✓ HUMAN-WRITTEN</span> src/config/env.ts</span>
-            </div>
-            <div class="code-line highlight-verified">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="success">✓ HUMAN-WRITTEN</span> src/index.ts</span>
-            </div>
-            <div class="code-line">
-              <span class="line-number"></span>
-              <span class="code-content"></span>
-            </div>
-            <div class="code-line">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="keyword">Policy Check:</span> AI code requires senior review</span>
-            </div>
-            <div class="code-line">
-              <span class="line-number"></span>
-              <span class="code-content"><span class="warning">→ Blocking merge until @security-team approves</span></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="compliance">
-      <div class="container">
-        <div class="section-label">Compliance Ready</div>
-        <h2>Built for auditors</h2>
-        <p class="section-desc">
-          Generate evidence packs for SOC 2, prepare for EU AI Act requirements, 
-          and satisfy security questionnaires automatically.
-        </p>
-        
-        <div class="compliance-grid">
-          <div class="compliance-card">
-            <h4>EU AI Act</h4>
-            <p>AI system documentation for high-risk applications</p>
-          </div>
-          <div class="compliance-card">
-            <h4>SOC 2 Type II</h4>
-            <p>AI governance evidence for security audits</p>
-          </div>
-          <div class="compliance-card">
-            <h4>ISO 27001</h4>
-            <p>AI risk controls for security certification</p>
-          </div>
-          <div class="compliance-card">
-            <h4>SEC Rules</h4>
-            <p>Material breach disclosure readiness</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="container">
-      <div class="cta">
-        <h2>Ship AI code with confidence</h2>
-        <p>Join the private beta and get compliant before the auditors ask.</p>
-        <a href="#" class="btn btn-primary">Request Early Access</a>
-      </div>
-    </section>
-  </main>
+  <section class="cta-section">
+    <h2>Ship AI code with confidence</h2>
+    <p>Join the private beta. Limited spots for design partners.</p>
+    <a href="#" class="btn btn-primary">Request early access</a>
+  </section>
 
   <footer>
-    <div class="container">
-      <div class="footer-content">
-        <div class="logo">
-          <div class="logo-icon">🛡️</div>
-          <span>VibeGuard</span>
-        </div>
-        <div class="footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Security</a>
-          <a href="#">Contact</a>
-        </div>
-      </div>
+    <div>
+      <a href="#">Docs</a>
+      <a href="https://github.com/rohansx/vibeguard.io">GitHub</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
     </div>
+    <p style="margin-top: 1.5rem;">© 2026 VibeGuard</p>
   </footer>
 </body>
 </html>
