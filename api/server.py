@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from detection.detector import analyze as analyze_combined, CombinedDetector
 from detection.stylometry import analyze_code, StylometryAnalyzer
+from detection.security import scan_code as security_scan
 from policy.engine import PolicyEngine, evaluate_commit, EXAMPLE_CONFIG
 
 app = Flask(__name__)
@@ -217,6 +218,71 @@ def scan():
         'blocked': not policy_result['allowed'],
         'violations': policy_result['violations'],
         'warnings': policy_result['warnings']
+    })
+
+
+@app.route('/api/v1/security', methods=['POST'])
+def security():
+    """
+    Scan code for security vulnerabilities.
+    
+    Request body:
+    {
+        "code": "const apiKey = 'sk-...'",
+        "language": "javascript"
+    }
+    """
+    data = request.get_json()
+    
+    if not data or 'code' not in data:
+        return jsonify({'error': 'Missing "code" in request body'}), 400
+    
+    code = data['code']
+    language = data.get('language', 'auto')
+    
+    result = security_scan(code, language)
+    
+    return jsonify(result)
+
+
+@app.route('/api/v1/full-scan', methods=['POST'])
+def full_scan():
+    """
+    Combined AI detection + security scanning.
+    
+    Request body:
+    {
+        "code": "...",
+        "language": "javascript"
+    }
+    """
+    data = request.get_json()
+    
+    if not data or 'code' not in data:
+        return jsonify({'error': 'Missing "code" in request body'}), 400
+    
+    code = data['code']
+    language = data.get('language', 'auto')
+    
+    # AI detection
+    ai_result = analyze_code(code, language)
+    
+    # Security scan
+    sec_result = security_scan(code, language)
+    
+    return jsonify({
+        'ai_detection': {
+            'probability': ai_result['ai_probability'],
+            'confidence': ai_result['confidence'],
+            'features': ai_result['features']
+        },
+        'security': sec_result,
+        'summary': {
+            'ai_generated': ai_result['ai_probability'] > 0.7,
+            'security_passed': sec_result['passed'],
+            'total_issues': sec_result['summary']['total'],
+            'critical_issues': sec_result['summary']['critical'],
+        }
     })
 
 
